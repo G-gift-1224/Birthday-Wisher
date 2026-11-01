@@ -1,0 +1,5 @@
+.env
+wishes.db
+uploads/
+media/
+__pycache__/

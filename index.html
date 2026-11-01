@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Birthday Wisher</title>
+<style>body{font-family:system-ui;max-width:520px;margin:30px auto;padding:0 16px}input,select,textarea,button{width:100%;padding:10px;margin:6px 0;box-sizing:border-box}button{background:#ff5e62;color:#fff;border:0;border-radius:8px;font-size:16px}li{margin:4px 0}</style></head><body>
+<h2>🎂 Auto Birthday Wisher</h2>
+<form id="f">
+<input name="name" placeholder="Friend's name" required>
+<textarea name="message" placeholder="Your wish"></textarea>
+<label>Send at (IST)</label><input type="datetime-local" name="send_at" required>
+<label>Photo (for auto-made video)</label><input type="file" name="photo" accept="image/*">
+<label>OR upload your finished video (used as is)</label><input type="file" name="video_file" accept="video/*">
+<label>Voice message (optional, sent as audio)</label><button type="button" id="rec" style="background:#444">🎙️ Start recording</button><audio id="rp" controls style="display:none;width:100%"></audio><input type="file" name="voice" accept="audio/*">
+<label>Template</label><select name="template"><option value="party">Party</option><option value="night">Night</option><option value="mint">Mint</option></select>
+<label>Song</label><select name="song" id="song"><option value="">No song</option></select>
+<input name="tg_chat" placeholder="Friend's Telegram chat ID (optional)">
+<input name="wa_number" placeholder="WhatsApp number with country code, e.g. 919876543210 (optional)">
+<label><input type="checkbox" id="ig" style="width:auto"> Post Instagram Story</label>
+<button>Schedule</button></form>
+<h3>Scheduled</h3><ul id="list"></ul>
+<script>
+fetch('/api/songs').then(r=>r.json()).then(s=>s.forEach(x=>song.add(new Option(x,x))));
+async function load(){const w=await (await fetch('/api/wishes')).json();list.innerHTML=w.map(x=>`<li>${x.name} - ${x.send_at.replace('T',' ')} - <b>${x.status}</b></li>`).join('')}
+const rec={blob:null,mr:null};
+document.getElementById('rec').onclick=async()=>{const b=document.getElementById('rec');
+ if(rec.mr&&rec.mr.state==='recording'){rec.mr.stop();return}
+ try{const st=await navigator.mediaDevices.getUserMedia({audio:true}),ch=[];rec.mr=new MediaRecorder(st);rec.mr.ondataavailable=e=>ch.push(e.data);
+ rec.mr.onstop=()=>{st.getTracks().forEach(t=>t.stop());rec.blob=new Blob(ch,{type:'audio/webm'});const a=document.getElementById('rp');a.src=URL.createObjectURL(rec.blob);a.style.display='block';b.textContent='🎙️ Record again'};
+ rec.mr.start();b.textContent='⏹ Stop recording'}catch(err){alert('Allow the microphone in Chrome (lock icon next to the address bar).')}};
+f.onsubmit=async e=>{e.preventDefault();const d=new FormData(f);d.append('ig_story',ig.checked?1:0);if(rec.blob)d.set('voice',rec.blob,'voice.webm');const r=await fetch('/api/wishes',{method:'POST',body:d});if(!r.ok){alert((await r.json()).error);return}f.reset();load();alert('Scheduled! It will be sent automatically.')};
+load();setInterval(load,15000);
+</script></body></html>
